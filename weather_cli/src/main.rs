@@ -1,17 +1,21 @@
 use std::env;
+// (!) StructOpt is a crate that allows us to parse command line arguments
 use structopt::StructOpt;
+// (!) serde is a crate that allows us to deserialize JSON
 use serde::Deserialize;
 use reqwest::Error;
 
+// (!) derive is a way to apply a trait to a struct. This is done
+// through what is a called a "procedural macro".
 #[derive(StructOpt)]
 struct Cli {
     city: String,
 }
 
+// (!) Deserialize is a trait that allows us to deserialize JSON
 #[derive(Deserialize)]
-struct WeatherResponse {
-    weather: Vec<Weather>,
-    main: Main,
+struct Main {
+    temp: f32,
 }
 
 #[derive(Deserialize)]
@@ -20,8 +24,9 @@ struct Weather {
 }
 
 #[derive(Deserialize)]
-struct Main {
-    temp: f32,
+struct WeatherResponse {
+    weather: Vec<Weather>,
+    main: Main,
 }
 
 #[tokio::main]
@@ -36,6 +41,7 @@ async fn main() -> Result<(), Error> {
 
     let response = reqwest::get(&url).await?.json::<WeatherResponse>().await?;
 
+    // (!) println! is a macro created through macro_rules!
     println!("Weather in {}: {} and temperature is {}°C", args.city, response.weather[0].description, response.main.temp);
 
     Ok(())
