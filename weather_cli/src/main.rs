@@ -29,8 +29,17 @@ struct WeatherResponse {
     main: Main,
 }
 
+macro_rules! customLog {
+    () => {
+        // The macro will expand into the contents of this block.
+        println!("Welcome to the Weather CLI!")
+    };
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Error> {
+    customLog!();
+
     let args = Cli::from_args();
     let api_key = env::var("OPENWEATHERMAP_API_KEY").expect("OPENWEATHERMAP_API_KEY not set");
 
