@@ -1,4 +1,4 @@
-#![crate_name = "doc"]
+#![crate_name = "test"]
 
 /// A human being is represented here
 pub struct Person {
@@ -39,4 +39,8 @@ fn main() {
     let john = Person::new("John");
 
     john.hello();
+
+    // or 
+    let andrei = Person { name: "Andrei".to_string() };
+    println!("Hello, {}!", andrei.name);
 }
