@@ -57,21 +57,18 @@ async fn main() -> std::io::Result<()> {
     .await
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
-    use actix_web::{test, App};
-    use actix_web::http::StatusCode;
     use actix_multipart::Field;
+    use actix_web::http::StatusCode;
+    use actix_web::{test, App};
     use bytes::Bytes;
     use futures::stream::once;
 
     #[actix_rt::test]
     async fn test_index() {
-        let mut app = test::init_service(
-            App::new().route("/", web::get().to(index))
-        ).await;
+        let mut app = test::init_service(App::new().route("/", web::get().to(index))).await;
 
         let req = test::TestRequest::get().uri("/").to_request();
         let resp = test::call_service(&mut app, req).await;
@@ -80,9 +77,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_upload() {
-        let mut app = test::init_service(
-            App::new().route("/upload", web::post().to(upload))
-        ).await;
+        let mut app = test::init_service(App::new().route("/upload", web::post().to(upload))).await;
 
         let payload = r#"-----------------------------325491532399963166993862150
 Content-Disposition: form-data; name="textfield"; filename="test.txt"
@@ -110,7 +105,9 @@ Hello World!
     async fn test_file_download() {
         let field = Field::new(
             "testfile",
-            once(Ok::<_, std::io::Error>(Bytes::from_static(b"test file content"))),
+            once(Ok::<_, std::io::Error>(Bytes::from_static(
+                b"test file content",
+            ))),
             None,
             None,
         );
@@ -119,8 +116,9 @@ Hello World!
         assert_eq!(content.status(), StatusCode::OK);
 
         let mut app = test::init_service(
-            App::new().service(fs::Files::new("/files", "./uploads").show_files_listing())
-        ).await;
+            App::new().service(fs::Files::new("/files", "./uploads").show_files_listing()),
+        )
+        .await;
 
         let req = test::TestRequest::get().uri("/files/testfile").to_request();
         let resp = test::call_service(&mut app, req).await;
