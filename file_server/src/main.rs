@@ -3,23 +3,36 @@ use actix_multipart::Multipart;
 use actix_web::{web, App, Error, HttpResponse, HttpServer, Responder};
 use futures::{StreamExt, TryStreamExt};
 use std::io::Write;
+
 use std::path::PathBuf;
 
 async fn upload(mut payload: Multipart) -> Result<HttpResponse, Error> {
     while let Ok(Some(mut field)) = payload.try_next().await {
-        let content_disposition = field
-            .content_disposition()
-            .expect("Expected Content-Disposition");
-        let filename = content_disposition
-            .get_filename()
-            .expect("Expected filename");
-        let mut path = PathBuf::from("./uploads");
-        path.push(filename);
+        let filename = field.content_disposition().get_filename();
 
-        let mut f = web::block(|| std::fs::File::create(path)).await.unwrap();
-        while let Some(chunk) = field.next().await {
-            let data = chunk.unwrap();
-            f = web::block(move || f.write_all(&data).map(|_| f)).await?;
+        let mut path = PathBuf::from("./uploads");
+
+        match filename {
+            Some(_filename) => {
+                path.push(_filename);
+                let mut f = web::block(|| std::fs::File::create(path)).await.unwrap();
+                while let Some(chunk) = field.next().await {
+                    let data = chunk.unwrap();
+                    f = web::block(move || {
+                        f.and_then(|mut file| file.write_all(&data).map(|_| file))
+                    })
+                    .await
+                    .map_err(|e| {
+                        // Handle the error case, such as logging or returning an error response
+                        eprintln!("Error writing to file: {}", e);
+                        actix_web::error::ErrorInternalServerError("Failed to write to file")
+                    })?;
+                }
+            }
+            None => {
+                // Handle the case when the Option is None
+                println!("No filename provided");
+            }
         }
     }
     Ok(HttpResponse::Ok().into())
