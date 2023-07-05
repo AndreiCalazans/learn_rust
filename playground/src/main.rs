@@ -1,14 +1,9 @@
 use chrono::Local;
 use reqwest;
 use tokio::time::{sleep, timeout, Duration};
-// (!) serde is a crate that allows us to deserialize JSON
-use serde::Deserialize;
 
-#[derive(Debug, Deserialize)]
-struct CatFact {
-    fact: String,
-    length: u32,
-}
+mod logger;
+mod utils;
 
 async fn process_field(field: i32) {
     println!("Processing field: {:?}", field);
@@ -24,15 +19,26 @@ async fn run_example_if_let() {
         Ok(Some(4)),
     ];
 
-    for item in payload {
+    for item in &payload {
         if let Ok(Some(field)) = item {
-            process_field(field).await;
+            process_field(*field).await;
         } else if let Ok(None) = item {
             println!("Caught a None value.");
         } else {
             println!("Caught error.");
         }
     }
+
+    /*
+     * Ok, this is interesting, by default, Rust won't compile a Vec that gets used in two spots? 
+     * Specially if you pass it to a function or use it in a for loop like we do with payload
+     * above.
+     *
+     * In this example I could: clone payload or use a reference to it.
+     * */
+
+    let result = utils::removeErrorsFromVector(payload);
+    println!("remove errors from vec result: {:?}", result); 
     println!("DONE!");
 }
 
@@ -48,7 +54,7 @@ async fn fake_http_request() {
 
     match response {
         Ok(response) => {
-            let data = response.json::<CatFact>().await;
+            let data = response.json::<utils::types::CatFact>().await;
             match data {
                 Ok(data) => {
                     println!("Full Cat Fact: {:?}", data);
@@ -90,6 +96,7 @@ async fn run_example_with_fake_async() {
 
 #[tokio::main]
 async fn main() {
+    logger::log_message("Stating examples");
     /*
      * Example of using if let with async/await.
      * */
@@ -104,4 +111,7 @@ async fn main() {
      * HTTP request example
      * */
     fake_http_request().await;
+
+    logger::warn_message("Warning are exiting...");
+    logger::error_message("Exit");
 }
